@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sagemaker-manager"
+version = "0.1.0"
+description = "Manage SageMaker endpoints for Deepgram STT and TTS services."
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "boto3",
+  "botocore",
+  "python-dotenv",
+  "loguru",
+]
+
+[project.scripts]
+sagemaker-manager = "sagemaker_manager:main"
+
+[tool.setuptools]
+py-modules = ["sagemaker_manager"]
