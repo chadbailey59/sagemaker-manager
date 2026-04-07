@@ -27,6 +27,9 @@ Usage::
     # Create only STT endpoint
     python sagemaker_manage.py up --service stt
 
+    # Create STT endpoint using Deepgram Flux model
+    python sagemaker_manage.py up --service stt --flux
+
     # Tear down endpoints
     python sagemaker_manage.py down
 
@@ -298,13 +301,25 @@ def _create_endpoint(
 
 def _create_stt_endpoint(client, args, role_arn):
     """Create the STT endpoint."""
-    pkg_arn = os.getenv("DEEPGRAM_STT_MODEL_PACKAGE_ARN")
-    if not pkg_arn:
-        logger.error(
-            "DEEPGRAM_STT_MODEL_PACKAGE_ARN is not set. "
-            "Subscribe to Deepgram STT on AWS Marketplace and set the model package ARN."
-        )
-        sys.exit(1)
+    if getattr(args, "flux", False):
+        env_var = "DEEPGRAM_FLUX_STT_MODEL_PACKAGE_ARN"
+        pkg_arn = os.getenv(env_var)
+        if not pkg_arn:
+            logger.error(
+                f"{env_var} is not set. "
+                "Subscribe to Deepgram Flux STT on AWS Marketplace and set the model package ARN."
+            )
+            sys.exit(1)
+        logger.info("Using Deepgram Flux STT model package.")
+    else:
+        env_var = "DEEPGRAM_STT_MODEL_PACKAGE_ARN"
+        pkg_arn = os.getenv(env_var)
+        if not pkg_arn:
+            logger.error(
+                f"{env_var} is not set. "
+                "Subscribe to Deepgram STT on AWS Marketplace and set the model package ARN."
+            )
+            sys.exit(1)
     _create_endpoint(
         client,
         endpoint_name=args.stt_endpoint_name,
@@ -475,8 +490,9 @@ def main():
             "  AWS_SAGEMAKER_SECRET_ACCESS_KEY  AWS credentials (falls back to AWS_SECRET_ACCESS_KEY)\n"
             "  AWS_SAGEMAKER_SESSION_TOKEN      Session token (falls back to AWS_SESSION_TOKEN)\n"
             "  SAGEMAKER_EXECUTION_ROLE_ARN     IAM role ARN for SageMaker (auto-discovered/created if unset)\n"
-            "  DEEPGRAM_STT_MODEL_PACKAGE_ARN   Marketplace model package ARN for Deepgram STT\n"
-            "  DEEPGRAM_TTS_MODEL_PACKAGE_ARN   Marketplace model package ARN for Deepgram TTS\n"
+            "  DEEPGRAM_STT_MODEL_PACKAGE_ARN        Marketplace model package ARN for Deepgram STT\n"
+            "  DEEPGRAM_TTS_MODEL_PACKAGE_ARN        Marketplace model package ARN for Deepgram TTS\n"
+            "  DEEPGRAM_FLUX_STT_MODEL_PACKAGE_ARN   Marketplace model package ARN for Deepgram Flux STT\n"
         ),
     )
 
@@ -506,6 +522,12 @@ def main():
         choices=["stt", "tts"],
         default=None,
         help="Only create this service's endpoint (default: both)",
+    )
+    up_parser.add_argument(
+        "--flux",
+        action="store_true",
+        default=False,
+        help="Use Deepgram Flux STT model package (DEEPGRAM_FLUX_STT_MODEL_PACKAGE_ARN)",
     )
     up_parser.add_argument(
         "--stt-instance-type",
